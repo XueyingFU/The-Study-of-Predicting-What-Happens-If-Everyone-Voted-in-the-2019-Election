@@ -36,7 +36,7 @@ cesR::get_decon()
 https://github.com/XueyingFU/The-Study-of-Predicting-What-Happens-If-Everyone-Voted-in-the-2019-Election.git
 
 # Abstract
-## 
+Based on the 2017 General Social Survey and 2019 Canadian election datasets, the statistics of the report shows that if everyone voted in 2019 Canadian Election, then the Liberal Party will still be winning. The reason is that most voters seem like preferring the left wing party -- Liberal Party instead of the right wing Party -- Conservative Party. The estimation is around **0.4** for the predicting model.
 
 # Keywords: Predicting 2019 Election, Left wing, Right wing
 
@@ -189,9 +189,9 @@ censusData$estimate <-
   exp(censusData$logodds_estimate)/(1+exp(censusData$logodds_estimate))
 
 
-post_strat_predict <- censusData %>%
-  mutate(alp_predict_prop = estimate*n) %>%
-  summarise(predict = sum(alp_predict_prop)/sum(n))
+# post_strat_predict <- censusData %>%
+# mutate(alp_predict_prop = estimate*n) %>%
+#  summarise(predict = sum(alp_predict_prop)/sum(n))
 
 ```
 
@@ -209,16 +209,19 @@ kable(broom::tidy(survey_full_model), align = "c", format = "markdown", digits =
 ```
 
 # Results
+From `table1`, we can see the all the test-statistics for all variables. I found that all the P-value for education level is extremely small, so that it appears as **0.000** on the table. Since there was an error occur says that my x binary is non numeric, therefore, I mannually browse over the `survey_full_model$estimate`, and the `survey_full_model$estimate` are mostly below **0.500**. Therefore, we can conclude the most voters preferred left wings. A few test statistics are negative, and a few test statistics are very large. For example, the test statistic for sex is **17.995** and the test statistic for marital status if the person is single is **-4.839**.
+
+The estimates for `age`, `marital_statusLiving common-law` ,`marital_statusSeparated`, and `marital_statusSingle, never married` have negative relationships with the `left_right` wing. All standard errors are smaller than **0.084**.
 
 # Discussions
 ## Summary
-
+According to our result of the dataset, the P-values are very small so that we can conclude that most variables are important. Based on the `survey_full_model$estimate`, which are mostly below **0.500**, we could conclude that, the voters tends to vote for Liberal Party, and the left wing Party have a large proportion of winning the 2019 Canadian Election again if everyone voted. The test statistics is very large shows that there might be some correlations between some of the variables.
 
 ## Weakness
 We are predicting what happens on 2019 Canadian elections if everyone voted in the election. In this case, the parameter is in a very large scale, so that our estimation may have a very large error for the predicting models since I only use the data from 2017 for predicting. In order to make the levels for all categorical variables to be the same, I use the levels from census data to rename all of the names for the categorical variables. For instance, `Nunavut`, `Northwest Territories`, and `Yukon` are grouped into `prairie region` for my post-stratifications of the modeling. Additionally, the weakness of logistic regression is that it can only be used by categorical variables (GeeksForGeeks, AmiyaRanjanRout, &amp; GeeksForGeeks, 2020). Also, logistic regression cannot be used for non-linear problems, hence that of if the relationship of the dependent and independent variables is nonlinear, then this model is not a fitted model. Otherwise, there might be cases where we have more observations than the number of feature, and this may lead to overfitting the model. In summary, we will not be able to have an accurate model or result for predicting on a high-dimensional dataset(Grover, 2020).
 
 ## Next Steps
-To improve what we have done in this report, here are a few things that we can do. In order make our predicting model more precise, we could use more dataset, like the dataset from 2013, so that we have more information that we can match to the survey data in 2019 Canadian Election. Also, I merged `prairie region` into a very large category which include the three north territories. We could improve this by adding a level to the model of the dataset that we are predicting, or we could find more data for predicting 2019 Canadian Elections on post-stratifications for provinces instead of region.
+According to the discussion on weakness above, we could improve some of those problems. To improve what we have done in this report, here are a few things that we can do. In order to make our predicting model more precise, we could use more dataset, like the dataset from 2013, so that we have more information that we can match to the survey data in 2019 Canadian Election. Also, I merged `prairie region` into a very large category which include the three north territories. We could improve this by adding a level to the model of the dataset that we are predicting, or we could find more data for predicting 2019 Canadian Elections on post-stratifications for provinces instead of region.
 
 # Bibliography
 1. Beauchamp, Z. (2019, October 22). Justin Trudeau's Liberals won Canada's election. Retrieved December 10, 2020, from https://www.vox.com/policy-and-politics/2019/10/21/20926201/canada-election-results-2019-justin- trudeau-wins
@@ -233,4 +236,4 @@ LINK: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/D
 
 5. Grover, K. (2020, June 23). Advantages and Disadvantages of Logistic Regression. Retrieved December 23, 2020, from https://iq.opengenus.org/advantages-and-disadvantages-of-logistic-regression/
 
-6. 
+6. Pascale Beaupré (April 2020), General Social Survey Cycle 31 : Families Public Use Microdata File Documentation and User’s Guide 
