@@ -20,7 +20,7 @@ library(gridExtra)
 
 ## devtools::install_github("hodgettsp/cesR") which has already installed
 
-cesR::get_decon()
+## cesR::get_decon()
 
 ```
 
@@ -202,10 +202,13 @@ summary(survey_full_model)
 
 
 
-```{r table1}
-kable(broom::tidy(survey_full_model), align = "c", format = "markdown", digits = 3,
-      col.names = c("Term", "Estimate", "Standard Error", "Test Statistic", "P-Value"),
-      caption = "Summary for the Survey Logistic Regression Model")
+```{r}
+library(gridExtra)
+
+# table1
+# kable(broom::tidy(survey_full_model), align = "c", format = "markdown", digits = 3,
+#      col.names = c("Term", "Estimate", "Standard Error", "Test Statistic", "P-Value"),
+#      caption = "Summary for the Survey Logistic Regression Model")
 ```
 
 # Results
