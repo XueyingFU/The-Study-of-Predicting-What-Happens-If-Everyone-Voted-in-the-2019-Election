@@ -1,0 +1,225 @@
+---
+title: "The Study of Predicting What Happens If Everyone Voted in the 2019 Election"
+author: "Xueying Fu 1004147611"
+date: "20 DEC 2020"
+output: pdf_document
+---
+
+```{r}
+install.packages("tidyverse")
+install.packages("devtools")
+
+devtools::install_github("hodgettsp/cesR") ## in order to get data from cesR
+library(tidyverse)
+library(visdat)
+library(cesR)
+library(skimr)
+
+## devtools::install_github("hodgettsp/cesR") which has already installed
+
+cesR::get_decon()
+
+```
+
+# INFORMATION
+**Topic:** The Study of Predicting What Happens If Everyone Voted in the 2019 Election
+
+**Author:** Xueying Fu 1004147611
+
+**Date:** DEC 20, 2020
+
+**Code and data supporting this analysis is available at:**
+
+https://github.com/XueyingFU/The-Study-of-Predicting-What-Happens-If-Everyone-Voted-in-the-2019-Election.git
+
+# Abstract
+## 
+
+# Keywords: Predicting 2019 Election, Left wing, Right wing
+
+# Introduction
+The last Canadian elections happens on October 21 of the year 2019. The Liberal Party won a minority government(Beauchamp, Justin Trudeau's Liberals won Canada's election 2019). One of the ways of discover why the Liberal Party losses their seats in the House of Commons is to do a survey on the 2019 Canadian Election. From the ‘Canadian Election Study 2019 Online Survey codebook’, there are two field of the periods for the survey, and the survey is provided on the Qualtrics online platform. One is during the campaign period, and the other is after the election. Additionally, the respondent of the survey must be 18 or above, and should be a Canadian citizen or a permanent resident.
+
+This study will be mainly focusing on using the dataset from 2017 to predict what will happen if everyone voted in 2019 election. There are 620 variables in total in the dataset. The main independent variable that will be analyzed are age, sex, marital status, education, and region. The dependent variable that we will be observing is whether the voter is a left or right wing.
+
+
+```{r, include = FALSE}
+library(tidyverse)
+library(visdat)
+library(cesR)
+library(skimr)
+
+## we can also use get_decon or other tools, like get_ces. I used get_decon here.
+get_decon()
+
+## Import cleaned dataset "census_data.csv"
+censusData1 <- read.csv("census_data.csv")
+## There is an extra column for "census_data.csv". It is not important so that we can delete it.
+censusData <- censusData1[, 1:(ncol(censusData1)-1)]
+
+
+## We want to rould the number to the lower integer for ages.
+censusData$age <- floor(censusData$age)
+
+## We want to pair the variables in "decon" to the variables in "census_data.csv"
+decon <- decon %>% mutate(sex = case_when(gender == "A man" ~ "Male",
+                                          gender == "A woman" ~ "Female"),
+                          age = 2019 - as.numeric(as.character(yob)),
+                          region = case_when(province_territory == "Alberta" ~ "Prairie region",
+                                             province_territory == "British Columbia" ~ "British Columbia",
+                                             province_territory == "Manitoba" ~ "Prairie region",
+                                             province_territory == "New Brunswick" ~ "Atlantic region",
+                                             province_territory == "Newfoundland and Labrador" ~ "Atlantic region",
+                                             province_territory == "Northwest Territories" ~ "Prairie region",
+                                             province_territory == "Nova Scotia" ~ "Atlantic region",
+                                             province_territory == "Nunavut" ~ "Prairie region",
+                                             province_territory == "Ontario" ~ "Ontario",
+                                             province_territory == "Prince Edward Island" ~ "Atlantic region",
+                                             province_territory == "Quebec" ~ "Quebec",
+                                             province_territory == "Saskatchewan" ~ "Prairie region",
+                                             province_territory == "Yukon" ~ "Prairie region"),
+                          marital_status = case_when(marital == "Married" ~ "Married",
+                                                     marital == "Living with a partner" ~ "Living common-law",                  
+                                                     marital == "Divorced" ~ "Divorced",
+                                                     marital == "Separated" ~ "Separated",
+                                                     marital == "Widowed" ~ "Widowed",
+                                                     marital == "Never Married" ~ "Single, never married",
+                                                     marital == "Don't know/ Prefer not to answer" ~ "Married"),
+                          education_level = case_when(education == "No schooling" ~ "Less than high school diploma or its equivalent",
+                                                education == "Some elementary school" ~ "Less than high school diploma or its equivalent",
+                                                education == "Completed elementary school" ~ "Less than high school diploma or its equivalent",
+                                                education == "Some secondary/ high school" ~ "High school diploma or a high school equivalency certificate",
+                                                education == "Some technical, community college, CEGEP, College Classique" ~ "Trade certificate or diploma",
+                                                education == "Completed technical, community college, CEGEP, College Classique" ~ "College, CEGEP or other non-university certificate or di...",
+                                                education == "Some university" ~ "University certificate or diploma below the bachelor's level",
+                                                education == "Bachelor's degree" ~ "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)",
+                                                education == "Completed secondary/ high school" ~ "Less than high school diploma or its equivalent",
+                                                education == "Master's degree" ~ "University certificate, diploma or degree above the bach...",
+                                                education == "Professional degree or 
+                                                doctorate" ~ "University certificate, diploma or degree above the bach...",
+                                                education == "Don't know/ Prefer not to 
+                                                answer" ~ "Less than high school diploma or its equivalent"),
+                          lr = as.numeric(lr),
+                          left_right = case_when(lr > 5 ~ 1,
+                                                 lr <= 5 ~ 0))
+
+## left_right is to determine whether the person prefer left or right wing for a party.
+```
+
+# Methodology
+## Data
+I chose to use the multiple linear regression model for the data of predicting what happens if everyone vote on the 2019 Canadian Election.Upon the variables that I chose to observe, I did variable selections and none of the variables could be deleted from the original data.The starting AIC for `censusFullModel` is 37290, which is the lowest comparing to the AICs for `censusModel1`, `censusModel2`, `censusModel3`, `censusModel4`, `censusModel5`. `censusModel2` has the greatest AIC, which is 39160. Therefore, this indicates that the original model `censusFullModel` is the best fit model of the data. I assigned the regions of the North `Nunavut`, `Yukon`, `Northwest Territories` into paririe regions.
+
+
+
+$$
+log(\frac{p}{1-p}) = \beta_0 + \beta_1 X_{1Age} + \beta_2 X_{2Male} + \beta_3 X_{3Region_{PrairieRegion}} + \beta_4 X_{4Region_{AtlanticRegion}} + \beta_5 X_{5Region_{Ontario}}
+$$
+`\beta_1 X_{1Age}` represents the beta for Age.
+`\beta_2 X_{2Male}` represents the beta for whether the person is a male or a female.
+`\beta_3 X_{3Region_{PrairieRegion}}` represents the beta for if the voter is from Prairie Region.
+`\beta_4 X_{4Region_{AtlanticRegion}}` represents the beta for if the voter is from Atlantic Region.
+`\beta_5 X_{5Region_{Ontario}}` represents the beta for if the voter is from Atlantic Region.
+
+$$
++ \beta_7 X_{7Region_{Quebec}} + \beta_8 X_{8Region_{BritishColumbia}} + \beta_9 X_{9MaritalStatus_{Married}} + \beta_{10} X_{10MaritalStatus_{LivingCommon-law}} + \beta_{11} X_{11MaritalStatus_{Divorced}} + \beta_{12} X_{12MaritalStatus_{Separated}}
+$$
+
+`\beta_7 X_{7Region_{Quebec}}` represents the beta for if the voter is from Quebec.
+`\beta_8 X_{8Region_{BritishColumbia}}` represents the beta for if the voter is from British Columbia.
+`\beta_9 X_{9MaritalStatus_{Married}}` represents the beta for if the voter is married.
+`\beta_{10} X_{10MaritalStatus_{LivingCommon-law}}` represents the beta for if the voter is living common-law.
+`\beta_{11} X_{11MaritalStatus_{Divorced}}` represents the beta for if the voter is divorced.
+`\beta_{12} X_{12MaritalStatus_{Separated}}`represents the beta for if the voter is separated from their family.
+
+$$
++ \beta_{13} X_{13MaritalStatus_{Widowed}} + \beta_{14} X_{14MaritaStatus_{Single}} + \beta_{15} X_{15Education_{LessthanHighSchool}} + \beta_{16} X_{16Education_{Trade}}
+$$
+`\beta_{13} X_{13MaritalStatus_{Widowed}}` represents the beta for if the voter is widowed.
+`\beta_{14} X_{14MaritaStatus_{Single}}` represents the beta for if the voter is single, and never married.
+`\beta_{15} X_{15Education_{LessthanHighSchool}}` represents the beta for if the voter's education level is less than high school.
+`\beta_{16} X_{16Education_{Trade}}` represents the beta for if the voter's education level is Trade certificate or diploma.
+
+$$
++ \beta_{17} X_{17Education_{College}} + \beta_{18} X_{18Education_{UniversityOrBelow}} + \beta_{19} X_{19Education_{Bachelor}} + \beta_{20} X_{20Education_{UniversityOrAbove}}
+$$
+`\beta_{17} X_{17Education_{College}}` represents the beta for if the voter's education level is College, CEGEP or other non-university certificate or di...
+`\beta_{18} X_{18Education_{UniversityOrBelow}}` represents the beta for if the voter's education level is University certificate or diploma below the bachelor's level.
+`\beta_{19} X_{19Education_{Bachelor}}` represents the beta for if the voter's education level is Bachelor's degree (e.g. B.A., B.Sc., LL.B.).
+`\beta_{20} X_{20Education_{UniversityOrAbove}}` represents the beta for if the voter's education level is University certificate, diploma or degree above the bach...
+
+```{r}
+## Create the model
+## Model that have all the variables age, sex, region, marital_status AIC=37290
+censusFullModel <- glm(left_right ~ age + sex + region + marital_status + education_level, data = decon, family = "binomial")
+
+## Model without marital_status AIC=37520
+censusModel1 <- glm(left_right ~ age + sex + region + education_level, data = decon, family = "binomial")
+
+## Model without education_level AIC=39160
+censusModel2 <- glm(left_right ~ age + sex + region + marital_status, data = decon, family = "binomial")
+
+## Model without region AIC=37440
+censusModel3 <- glm(left_right ~ age + sex + marital_status + education_level, data = decon, family = "binomial")
+
+## Model without sex AIC=37900
+censusModel4 <- glm(left_right ~ age + region + marital_status + education_level, data = decon, family = "binomial")
+
+## Model without age AIC=37290
+censusModel5 <- glm(left_right ~ sex + region + marital_status + education_level, data = decon, family = "binomial")
+
+## the stepwise elimination function to check which variable is better deleted.
+step(censusFullModel, direction = "backward")
+
+
+```
+
+
+
+```{r}
+## Here I will perform my calculations for post stratification
+censusData$logodds_estimate <-
+  censusFullModel %>%
+  predict(newdata = censusData)
+
+censusData$estimate <-
+  exp(censusData$logodds_estimate)/(1+exp(censusData$logodds_estimate))
+
+
+post_strat_predict <- censusData %>%
+  mutate(alp_predict_prop = estimate*n) %>%
+  summarise(predict = sum(alp_predict_prop)/sum(n))
+
+```
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+# Results
+
+# Discussions
+## Summary
+
+
+## Weakness
+In order to make the levels for all categorical variables to be the same, I use the levels from census data to rename all of the names for the categorical variables. For instance, `Nunavut`, `Northwest Territories`, and `Yukon` are grouped into `prairie region` for my poststratifications of the modeling. 
+
+
+## Next Steps
+
+# Bibliography
+1. Beauchamp, Z. (2019, October 22). Justin Trudeau's Liberals won Canada's election. Retrieved December 10, 2020, from https://www.vox.com/policy-and-politics/2019/10/21/20926201/canada-election-results-2019-justin- trudeau-wins
+
+2. Stephenson, Laura B., Allison Harell, Daniel Rubenson and Peter John Loewen. The 2019 Canadian Election Study – Phone Survey
+
+
+
+
