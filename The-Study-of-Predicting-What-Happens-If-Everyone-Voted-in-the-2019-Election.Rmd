@@ -6,14 +6,17 @@ output: pdf_document
 ---
 
 ```{r}
-install.packages("tidyverse")
-install.packages("devtools")
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+## install.packages("tidyverse")
+## install.packages("devtools")
 
 devtools::install_github("hodgettsp/cesR") ## in order to get data from cesR
 library(tidyverse)
 library(visdat)
 library(cesR)
 library(skimr)
+library(gridExtra)
 
 ## devtools::install_github("hodgettsp/cesR") which has already installed
 
@@ -108,7 +111,7 @@ decon <- decon %>% mutate(sex = case_when(gender == "A man" ~ "Male",
 
 # Methodology
 ## Data
-I chose to use the multiple linear regression model for the data of predicting what happens if everyone vote on the 2019 Canadian Election.Upon the variables that I chose to observe, I did variable selections and none of the variables could be deleted from the original data.The starting AIC for `censusFullModel` is 37290, which is the lowest comparing to the AICs for `censusModel1`, `censusModel2`, `censusModel3`, `censusModel4`, `censusModel5`. `censusModel2` has the greatest AIC, which is 39160. Therefore, this indicates that the original model `censusFullModel` is the best fit model of the data. I assigned the regions of the North `Nunavut`, `Yukon`, `Northwest Territories` into paririe regions.
+I chose to use the multiple linear regression model for the data of predicting what happens if everyone vote on the 2019 Canadian Election.Upon the variables that I chose to observe, I did variable selections and none of the variables could be deleted from the original data.The starting AIC for `survey_full_model` is 37290, which is the lowest comparing to the AICs for `model1`, `model2`, `model3`, `model4`, `model5`. `model2` has the greatest AIC, which is 39160. Therefore, this indicates that the original model `survey_full_model` is the best fit model of the data. I assigned the regions of the North `Nunavut`, `Yukon`, `Northwest Territories` into paririe regions.
 
 
 
@@ -151,25 +154,25 @@ $$
 ```{r}
 ## Create the model
 ## Model that have all the variables age, sex, region, marital_status AIC=37290
-censusFullModel <- glm(left_right ~ age + sex + region + marital_status + education_level, data = decon, family = "binomial")
+survey_full_model <- glm(left_right ~ age + sex + region + marital_status + education_level, data = decon, family = "binomial")
 
 ## Model without marital_status AIC=37520
-censusModel1 <- glm(left_right ~ age + sex + region + education_level, data = decon, family = "binomial")
+model1 <- glm(left_right ~ age + sex + region + education_level, data = decon, family = "binomial")
 
 ## Model without education_level AIC=39160
-censusModel2 <- glm(left_right ~ age + sex + region + marital_status, data = decon, family = "binomial")
+model2 <- glm(left_right ~ age + sex + region + marital_status, data = decon, family = "binomial")
 
 ## Model without region AIC=37440
-censusModel3 <- glm(left_right ~ age + sex + marital_status + education_level, data = decon, family = "binomial")
+model3 <- glm(left_right ~ age + sex + marital_status + education_level, data = decon, family = "binomial")
 
 ## Model without sex AIC=37900
-censusModel4 <- glm(left_right ~ age + region + marital_status + education_level, data = decon, family = "binomial")
+model4 <- glm(left_right ~ age + region + marital_status + education_level, data = decon, family = "binomial")
 
 ## Model without age AIC=37290
-censusModel5 <- glm(left_right ~ sex + region + marital_status + education_level, data = decon, family = "binomial")
+model5 <- glm(left_right ~ sex + region + marital_status + education_level, data = decon, family = "binomial")
 
 ## the stepwise elimination function to check which variable is better deleted.
-step(censusFullModel, direction = "backward")
+step(survey_full_model, direction = "backward")
 
 
 ```
@@ -179,7 +182,7 @@ step(censusFullModel, direction = "backward")
 ```{r}
 ## Here I will perform my calculations for post stratification
 censusData$logodds_estimate <-
-  censusFullModel %>%
+  survey_full_model %>%
   predict(newdata = censusData)
 
 censusData$estimate <-
@@ -194,13 +197,15 @@ post_strat_predict <- censusData %>%
 
 
 ```{r}
-
+summary(survey_full_model)
 ```
 
 
 
-```{r}
-
+```{r table1}
+kable(broom::tidy(survey_full_model), align = "c", format = "markdown", digits = 3,
+      col.names = c("Term", "Estimate", "Standard Error", "Test Statistic", "P-Value"),
+      caption = "Summary for the Survey Logistic Regression Model")
 ```
 
 # Results
@@ -210,16 +215,22 @@ post_strat_predict <- censusData %>%
 
 
 ## Weakness
-In order to make the levels for all categorical variables to be the same, I use the levels from census data to rename all of the names for the categorical variables. For instance, `Nunavut`, `Northwest Territories`, and `Yukon` are grouped into `prairie region` for my poststratifications of the modeling. 
-
+We are predicting what happens on 2019 Canadian elections if everyone voted in the election. In this case, the parameter is in a very large scale, so that our estimation may have a very large error for the predicting models since I only use the data from 2017 for predicting. In order to make the levels for all categorical variables to be the same, I use the levels from census data to rename all of the names for the categorical variables. For instance, `Nunavut`, `Northwest Territories`, and `Yukon` are grouped into `prairie region` for my post-stratifications of the modeling. Additionally, the weakness of logistic regression is that it can only be used by categorical variables (GeeksForGeeks, AmiyaRanjanRout, &amp; GeeksForGeeks, 2020). Also, logistic regression cannot be used for non-linear problems, hence that of if the relationship of the dependent and independent variables is nonlinear, then this model is not a fitted model. Otherwise, there might be cases where we have more observations than the number of feature, and this may lead to overfitting the model. In summary, we will not be able to have an accurate model or result for predicting on a high-dimensional dataset(Grover, 2020).
 
 ## Next Steps
+To improve what we have done in this report, here are a few things that we can do. In order make our predicting model more precise, we could use more dataset, like the dataset from 2013, so that we have more information that we can match to the survey data in 2019 Canadian Election. Also, I merged `prairie region` into a very large category which include the three north territories. We could improve this by adding a level to the model of the dataset that we are predicting, or we could find more data for predicting 2019 Canadian Elections on post-stratifications for provinces instead of region.
 
 # Bibliography
 1. Beauchamp, Z. (2019, October 22). Justin Trudeau's Liberals won Canada's election. Retrieved December 10, 2020, from https://www.vox.com/policy-and-politics/2019/10/21/20926201/canada-election-results-2019-justin- trudeau-wins
 
 2. Stephenson, Laura B., Allison Harell, Daniel Rubenson and Peter John Loewen. The 2019 Canadian Election Study – Phone Survey
 
+3. Stephenson, Laura B; Harell, Allison; Rubenson, Daniel; Loewen, Peter John, 2020, '2019 Canadian Election Study - Online Survey',
+           https://doi.org/10.7910/DVN/DUS88V, Harvard Dataverse, V1
+LINK: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DUS88V
 
+4. GeeksForGeeks, A., AmiyaRanjanRout, &amp; GeeksForGeeks, T. (2020, September 02). Advantages and Disadvantages of Logistic Regression. Retrieved December 23, 2020, from https://www.geeksforgeeks.org/advantages-and-disadvantages-of-logistic-regression/
 
+5. Grover, K. (2020, June 23). Advantages and Disadvantages of Logistic Regression. Retrieved December 23, 2020, from https://iq.opengenus.org/advantages-and-disadvantages-of-logistic-regression/
 
+6. 
